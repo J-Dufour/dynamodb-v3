@@ -1,68 +1,137 @@
 'use strict';
 
 var sinon  = require('sinon'),
-    AWS    = require('aws-sdk'),
     Table  = require('../lib/table'),
     _      = require('lodash'),
     bunyan = require('bunyan');
 
-exports.mockDynamoDB = function () {
-  var opts = { endpoint : 'http://localhost:8000', region: 'us-west-2', apiVersion: '2012-08-10' };
-  var db = new AWS.DynamoDB(opts);
+// Import v3 AWS SDK modules
+const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient } = require('@aws-sdk/lib-dynamodb');
 
-  db.scan          = sinon.stub();
-  db.putItem       = sinon.stub();
-  db.deleteItem    = sinon.stub();
-  db.query         = sinon.stub();
-  db.getItem       = sinon.stub();
-  db.updateItem    = sinon.stub();
-  db.createTable   = sinon.stub();
-  db.describeTable = sinon.stub();
-  db.updateTable   = sinon.stub();
-  db.deleteTable   = sinon.stub();
-  db.batchGetItem  = sinon.stub();
-  db.batchWriteItem = sinon.stub();
+exports.mockDynamoDBClient = function () {
+  var opts = { 
+    endpoint: 'http://localhost:8000', 
+    region: 'us-west-2'
+  };
+  var client = new DynamoDBClient(opts);
 
-  return db;
-};
-
-exports.realDynamoDB = function () {
-  var opts = { endpoint : 'http://localhost:8000', region: 'us-west-2', apiVersion: '2012-08-10' };
-  return new AWS.DynamoDB(opts);
-};
-
-exports.mockDocClient = function () {
-  var client = new AWS.DynamoDB.DocumentClient({service : exports.mockDynamoDB()});
-
-  var operations= [
-    'batchGet',
-    'batchWrite',
-    'put',
-    'get',
-    'delete',
-    'update',
-    'scan',
-    'query'
-  ];
-
-  _.each(operations, function (op) {
-    client[op] = sinon.stub();
-  });
-
-  client.service.scan          = sinon.stub();
-  client.service.putItem       = sinon.stub();
-  client.service.deleteItem    = sinon.stub();
-  client.service.query         = sinon.stub();
-  client.service.getItem       = sinon.stub();
-  client.service.updateItem    = sinon.stub();
-  client.service.createTable   = sinon.stub();
-  client.service.describeTable = sinon.stub();
-  client.service.updateTable   = sinon.stub();
-  client.service.deleteTable   = sinon.stub();
-  client.service.batchGetItem  = sinon.stub();
-  client.service.batchWriteItem = sinon.stub();
-
+  // Stub the send method with default promise resolution
+  client.send = sinon.stub().resolves({});
+  
   return client;
+};
+
+exports.realDynamoDBClient = function () {
+  var opts = { 
+    endpoint: 'http://localhost:8000', 
+    region: 'us-west-2'
+  };
+  return new DynamoDBClient(opts);
+};
+
+exports.mockDocumentClient = function () {
+  var baseClient = exports.mockDynamoDBClient();
+  var docClient = DynamoDBDocumentClient.from(baseClient);
+  
+  // Stub the send method for DocumentClient with default promise resolution
+  docClient.send = sinon.stub().resolves({});
+  
+  // For backward compatibility, add service property that points to base client
+  docClient.service = baseClient;
+  
+  return docClient;
+};
+
+exports.realDocumentClient = function () {
+  var baseClient = exports.realDynamoDBClient();
+  return DynamoDBDocumentClient.from(baseClient);
+};
+
+// Helper function for Command matching with specific parameters
+exports.matchCommand = function(CommandClassOrName, expectedInput) {
+  return sinon.match(function(cmd) {
+    var CommandClass;
+    
+    // If string name is passed, convert to actual Command class
+    if (typeof CommandClassOrName === 'string') {
+      CommandClass = exports.getCommandClass(CommandClassOrName);
+    } else {
+      CommandClass = CommandClassOrName;
+    }
+    
+    if (!CommandClass || !(cmd instanceof CommandClass)) {
+      return false;
+    }
+    if (!expectedInput) {
+      return true; // Just match the Command type
+    }
+    return _.isEqual(cmd.input, expectedInput);
+  });
+};
+
+// Helper function for partial Command matching (useful for complex objects)
+exports.matchCommandPartial = function(CommandClass, partialInput) {
+  return sinon.match(function(cmd) {
+    if (!(cmd instanceof CommandClass)) {
+      return false;
+    }
+    if (!partialInput) {
+      return true;
+    }
+    return _.isMatch(cmd.input, partialInput);
+  });
+};
+
+// Helper function to get Command class from method name (for migration ease)
+exports.getCommandClass = function(operation) {
+  const { 
+    GetCommand, 
+    PutCommand, 
+    UpdateCommand, 
+    DeleteCommand, 
+    QueryCommand, 
+    ScanCommand, 
+    BatchGetCommand, 
+    BatchWriteCommand 
+  } = require('@aws-sdk/lib-dynamodb');
+  
+  const { 
+    CreateTableCommand,
+    DescribeTableCommand,
+    UpdateTableCommand,
+    DeleteTableCommand
+  } = require('@aws-sdk/client-dynamodb');
+
+  const commandMap = {
+    'get': GetCommand,
+    'put': PutCommand,
+    'update': UpdateCommand,
+    'delete': DeleteCommand,
+    'query': QueryCommand,
+    'scan': ScanCommand,
+    'batchGet': BatchGetCommand,
+    'batchWrite': BatchWriteCommand,
+    'createTable': CreateTableCommand,
+    'describeTable': DescribeTableCommand,
+    'updateTable': UpdateTableCommand,
+    'deleteTable': DeleteTableCommand,
+    // Also support Command class names directly
+    'GetCommand': GetCommand,
+    'PutCommand': PutCommand,
+    'UpdateCommand': UpdateCommand,
+    'DeleteCommand': DeleteCommand,
+    'QueryCommand': QueryCommand,
+    'ScanCommand': ScanCommand,
+    'BatchGetCommand': BatchGetCommand,
+    'BatchWriteCommand': BatchWriteCommand,
+    'CreateTableCommand': CreateTableCommand,
+    'DescribeTableCommand': DescribeTableCommand,
+    'UpdateTableCommand': UpdateTableCommand,
+    'DeleteTableCommand': DeleteTableCommand
+  };
+
+  return commandMap[operation];
 };
 
 exports.mockSerializer = function () {
@@ -100,3 +169,8 @@ exports.testLogger = function() {
     level : bunyan.FATAL
   });
 };
+
+// Backward compatibility aliases for older test files
+exports.mockDocClient = exports.mockDocumentClient;
+exports.mockDynamoDB = exports.mockDynamoDBClient;
+exports.realDynamoDB = exports.realDynamoDBClient;

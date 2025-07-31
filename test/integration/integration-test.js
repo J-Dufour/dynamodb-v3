@@ -81,7 +81,7 @@ describe('DynamoDB Integration Tests', function() {
     const now = () => Date.now();
     now.description = 'Date.now()';
 
-    dynamo.dynamoDriver(helper.realDynamoDB());
+    dynamo.dynamoDriver(helper.realDynamoDBClient());
 
     User = dynamo.define('dynamo-int-test-user', {
       hashKey : 'id',

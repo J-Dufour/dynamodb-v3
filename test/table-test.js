@@ -8,6 +8,7 @@ var helper = require('./test-helper'),
     Query  = require('../lib//query'),
     Scan   = require('../lib//scan'),
     Item   = require('../lib/item'),
+    { CreateTableCommand } = require('@aws-sdk/client-dynamodb'),
     realSerializer = require('../lib/serializer'),
     chai   = require('chai'),
     expect = chai.expect,
@@ -25,8 +26,8 @@ describe('table', function () {
 
   beforeEach(function () {
     serializer = helper.mockSerializer(),
-    docClient = helper.mockDocClient();
-    dynamodb = docClient.service;
+    docClient = helper.mockDocumentClient();
+    dynamodb = helper.mockDynamoDBClient();
     logger = helper.testLogger();
   });
 
@@ -39,7 +40,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -50,7 +51,7 @@ describe('table', function () {
         Item : {email: 'test@test.com', name: 'test dude'}
       };
 
-      docClient.get.withArgs(request).yields(null, resp);
+      docClient.send.withArgs(helper.matchCommand('GetCommand', request)).resolves(resp);
 
       table.get('test@test.com', function (err, account) {
         account.should.be.instanceof(Item);
@@ -68,7 +69,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -79,7 +80,7 @@ describe('table', function () {
         Item : {email: 'test@test.com', name: 'test dude'}
       };
 
-      docClient.get.withArgs(request).yields(null, resp);
+      docClient.send.withArgs(helper.matchCommand('GetCommand', request)).resolves(resp);
 
       table.get('test@test.com')
         .then(function (account) {
@@ -102,7 +103,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -116,7 +117,7 @@ describe('table', function () {
         Item : {email: 'test@test.com', name: 'Tim Tester'}
       };
 
-      docClient.get.withArgs(request).yields(null, resp);
+      docClient.send.withArgs(helper.matchCommand('GetCommand', request)).resolves(resp);
 
       table.get('Tim Tester', 'test@test.com', function (err, account) {
         account.should.be.instanceof(Item);
@@ -134,7 +135,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -146,7 +147,7 @@ describe('table', function () {
         Item : {email: 'test@test.com', name: 'test dude'}
       };
 
-      docClient.get.withArgs(request).yields(null, resp);
+      docClient.send.withArgs(helper.matchCommand('GetCommand', request)).resolves(resp);
 
       table.get('test@test.com', {ConsistentRead: true}, function (err, account) {
         account.should.be.instanceof(Item);
@@ -165,7 +166,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -180,7 +181,7 @@ describe('table', function () {
         Item : {email: 'test@test.com', name: 'Tim Tester'}
       };
 
-      docClient.get.withArgs(request).yields(null, resp);
+      docClient.send.withArgs(helper.matchCommand('GetCommand', request)).resolves(resp);
 
       table.get('Tim Tester', 'test@test.com', {ConsistentRead: true}, function (err, account) {
         account.should.be.instanceof(Item);
@@ -202,7 +203,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts_2014',
@@ -213,7 +214,7 @@ describe('table', function () {
         Item : {email: 'test@test.com', name: 'test dude'}
       };
 
-      docClient.get.withArgs(request).yields(null, resp);
+      docClient.send.withArgs(helper.matchCommand('GetCommand', request)).resolves(resp);
 
       table.get('test@test.com', function (err, account) {
         account.should.be.instanceof(Item);
@@ -231,9 +232,9 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
-      docClient.get.yields(new Error('Fail'));
+      docClient.send.withArgs(helper.matchCommand('GetCommand')).rejects(new Error('Fail'));
 
       table.get('test@test.com', function (err, account) {
         expect(err).to.exist;
@@ -258,7 +259,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -269,7 +270,7 @@ describe('table', function () {
         }
       };
 
-      docClient.put.withArgs(request).yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('PutCommand', request)).resolves({});
 
       table.create(request.Item, function (err, account) {
         expect(err).to.not.exist;
@@ -294,7 +295,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -305,7 +306,7 @@ describe('table', function () {
         }
       };
 
-      docClient.put.withArgs(request).yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('PutCommand', request)).resolves({});
 
       table.create({email : 'test@test.com', age: 23}, function (err, account) {
         expect(err).to.not.exist;
@@ -332,15 +333,15 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var numberSet = sinon.match(function (value) {
-        var s = docClient.createSet([1, 2, 3]);
-
-        value.type.should.eql('Number');
-        value.values.should.eql(s.values);
-
-        return true;
+        // In v3, Sets are native JavaScript Sets
+        var expectedSet = new Set([1, 2, 3]);
+        
+        return value instanceof Set && 
+               value.size === expectedSet.size &&
+               [...value].every(val => expectedSet.has(val));
       }, 'NumberSet');
 
       var request = {
@@ -352,10 +353,11 @@ describe('table', function () {
         }
       };
 
-      docClient.put.withArgs(request).yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('PutCommand', request)).resolves({});
 
       var item = {email : 'test@test.com', name : 'Tim Test', age : null, favoriteNumbers: [], luckyNumbers: [1, 2, 3]};
       table.create(item, function (err, account) {
+        expect(err).to.not.exist;
         account.should.be.instanceof(Item);
 
         account.get('email').should.equal('test@test.com');
@@ -380,7 +382,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -390,7 +392,7 @@ describe('table', function () {
         }
       };
 
-      docClient.put.withArgs(request).yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('PutCommand', request)).resolves({});
 
       table.create({email: 'test@test.com', name: '', age: 2}, function (err, account) {
         expect(err).to.not.exist;
@@ -414,7 +416,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -424,7 +426,7 @@ describe('table', function () {
         }
       };
 
-      docClient.put.withArgs(request).yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('PutCommand', request)).resolves({});
 
       table.create({email : 'test@test.com'}, function (err, account) {
         expect(err).to.not.exist;
@@ -448,7 +450,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -458,7 +460,7 @@ describe('table', function () {
         }
       };
 
-      docClient.put.withArgs(request).yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('PutCommand', request)).resolves({});
 
       table.create({email : 'test@test.com'}, function (err, account) {
         expect(err).to.not.exist;
@@ -483,7 +485,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -492,7 +494,7 @@ describe('table', function () {
         }
       };
 
-      docClient.put.withArgs(request).yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('PutCommand', request)).resolves({});
 
       table.create({email : 'test@test.com'}, function (err, account) {
         expect(err).to.not.exist;
@@ -515,7 +517,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -527,7 +529,7 @@ describe('table', function () {
         ConditionExpression : '(#name = :name)'
       };
 
-      docClient.put.withArgs(request).yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('PutCommand', request)).resolves({});
 
       table.create({email : 'test@test.com'}, {expected: {name: 'Foo Bar'}}, function (err, account) {
         expect(err).to.not.exist;
@@ -549,21 +551,25 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
         Item : {
           email : 'test@test.com',
+          createdAt : sinon.match.string
         }
       };
 
-      docClient.put.withArgs(request).yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('PutCommand', request)).resolves({});
 
       table.create({email : 'test@test.com'});
 
-      docClient.put.calledWith(request);
-      return done();
+      // Give it a moment for the async call to complete, then check
+      setTimeout(function() {
+        sinon.assert.calledWith(docClient.send, helper.matchCommand('PutCommand'));
+        done();
+      }, 10);
     });
 
     it('should return validation error', function (done) {
@@ -577,14 +583,14 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       table.create({email : 'test@test.com', name : [1, 2, 3]}, function (err, account) {
         expect(err).to.exist;
         expect(err).to.match(/ValidationError/);
         expect(account).to.not.exist;
 
-        sinon.assert.notCalled(docClient.put);
+        sinon.assert.notCalled(docClient.send);
         done();
       });
     });
@@ -600,7 +606,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -613,7 +619,7 @@ describe('table', function () {
         ConditionExpression : '(#email <> :email)'
       };
 
-      docClient.put.withArgs(request).yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('PutCommand', request)).resolves({});
 
       table.create({email : 'test@test.com', name : 'Bob Tester'}, {overwrite: false}, function (err, account) {
         expect(err).to.not.exist;
@@ -636,7 +642,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -649,7 +655,7 @@ describe('table', function () {
         ConditionExpression : '(#email <> :email) AND (#name <> :name)'
       };
 
-      docClient.put.withArgs(request).yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('PutCommand', request)).resolves({});
 
       table.create({email : 'test@test.com', name : 'Bob Tester'}, {overwrite: false}, function (err, account) {
         expect(err).to.not.exist;
@@ -671,7 +677,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -681,7 +687,7 @@ describe('table', function () {
         }
       };
 
-      docClient.put.withArgs(request).yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('PutCommand', request)).resolves({});
 
       table.create({email : 'test@test.com', name : 'Bob Tester'}, {overwrite: true}, function (err, account) {
         expect(err).to.not.exist;
@@ -708,7 +714,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -726,7 +732,7 @@ describe('table', function () {
         scores : [97, 86]
       };
 
-      docClient.update.withArgs(request).yields(null, {Attributes: returnedAttributes});
+      docClient.send.withArgs(helper.matchCommand('UpdateCommand', request)).resolves({Attributes: returnedAttributes});
 
       var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
       table.update(item, function (err, account) {
@@ -753,7 +759,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -774,7 +780,7 @@ describe('table', function () {
 
       var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
 
-      docClient.update.withArgs(request).yields(null, {Attributes: returnedAttributes});
+      docClient.send.withArgs(helper.matchCommand('UpdateCommand', request)).resolves({Attributes: returnedAttributes});
 
       table.update(item, {ReturnValues: 'ALL_OLD', expected: {name: 'Foo Bar'}}, function (err, account) {
         account.should.be.instanceof(Item);
@@ -800,7 +806,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -821,7 +827,7 @@ describe('table', function () {
 
       var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
 
-      docClient.update.withArgs(request).yields(null, {Attributes: returnedAttributes});
+      docClient.send.withArgs(helper.matchCommand('UpdateCommand', request)).resolves({Attributes: returnedAttributes});
 
       var options = {
         UpdateExpression : 'ADD #color :c',
@@ -854,7 +860,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -872,12 +878,12 @@ describe('table', function () {
         scores : [97, 86]
       };
 
-      docClient.update.withArgs(request).yields(null, {Attributes: returnedAttributes});
+      docClient.send.withArgs(helper.matchCommand('UpdateCommand', request)).resolves({Attributes: returnedAttributes});
 
       var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
       table.update(item)
         .then(function () {
-          docClient.update.calledWith(request);
+          docClient.send.calledWith(helper.matchCommand('UpdateCommand', request));
 
           done();
         });
@@ -895,9 +901,9 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
-      docClient.update.yields(new Error('Fail'));
+      docClient.send.withArgs(helper.matchCommand('UpdateCommand')).rejects(new Error('Fail'));
 
       var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
 
@@ -920,9 +926,9 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
-      docClient.update.yields(new Error('Fail'));
+      docClient.send.withArgs(helper.matchCommand('UpdateCommand')).rejects(new Error('Fail'));
 
       var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
 
@@ -953,7 +959,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       table.query('Bob').should.be.instanceof(Query);
     });
@@ -973,7 +979,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       table.scan().should.be.instanceof(Scan);
     });
@@ -993,7 +999,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1002,13 +1008,13 @@ describe('table', function () {
         }
       };
 
-      docClient.delete.yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('DeleteCommand')).resolves({});
 
       serializer.buildKey.returns(request.Key);
 
       table.destroy('test@test.com', function () {
         serializer.buildKey.calledWith('test@test.com', null, s).should.be.true;
-        docClient.delete.calledWith(request).should.be.true;
+        docClient.send.calledWith(helper.matchCommand('DeleteCommand', request)).should.be.true;
 
         done();
       });
@@ -1026,7 +1032,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1036,13 +1042,13 @@ describe('table', function () {
         ReturnValues : 'ALL_OLD'
       };
 
-      docClient.delete.yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('DeleteCommand')).resolves({});
 
       serializer.buildKey.returns(request.Key);
 
       table.destroy('test@test.com', {ReturnValues: 'ALL_OLD'}, function () {
         serializer.buildKey.calledWith('test@test.com', null, s).should.be.true;
-        docClient.delete.calledWith(request).should.be.true;
+        docClient.send.calledWith(helper.matchCommand('DeleteCommand', request)).should.be.true;
 
         done();
       });
@@ -1060,7 +1066,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1073,7 +1079,7 @@ describe('table', function () {
         name  : 'Foo Bar'
       };
 
-      docClient.delete.yields(null, {Attributes: returnedAttributes});
+      docClient.send.withArgs(helper.matchCommand('DeleteCommand')).resolves({Attributes: returnedAttributes});
 
       serializer.buildKey.returns(request.Key);
       serializer.deserializeItem.withArgs(returnedAttributes).returns(
@@ -1082,7 +1088,7 @@ describe('table', function () {
 
       table.destroy('test@test.com', {ReturnValues: 'ALL_OLD'}, function (err, item) {
         serializer.buildKey.calledWith('test@test.com', null, s).should.be.true;
-        docClient.delete.calledWith(request).should.be.true;
+        docClient.send.calledWith(helper.matchCommand('DeleteCommand', request)).should.be.true;
 
         item.get('name').should.equal('Foo Bar');
 
@@ -1103,7 +1109,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1118,7 +1124,7 @@ describe('table', function () {
         name  : 'Foo Bar'
       };
 
-      docClient.delete.yields(null, {Attributes: returnedAttributes});
+      docClient.send.withArgs(helper.matchCommand('DeleteCommand')).resolves({Attributes: returnedAttributes});
 
       serializer.buildKey.returns(request.Key);
       serializer.deserializeItem.withArgs(returnedAttributes).returns(
@@ -1127,7 +1133,7 @@ describe('table', function () {
 
       table.destroy('test@test.com', 'Foo Bar', function (err, item) {
         serializer.buildKey.calledWith('test@test.com', 'Foo Bar', s).should.be.true;
-        docClient.delete.calledWith(request).should.be.true;
+        docClient.send.calledWith(helper.matchCommand('DeleteCommand', request)).should.be.true;
 
         item.get('name').should.equal('Foo Bar');
 
@@ -1148,7 +1154,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1164,7 +1170,7 @@ describe('table', function () {
         name  : 'Foo Bar'
       };
 
-      docClient.delete.yields(null, {Attributes: returnedAttributes});
+      docClient.send.withArgs(helper.matchCommand('DeleteCommand')).resolves({Attributes: returnedAttributes});
 
       serializer.buildKey.returns(request.Key);
       serializer.deserializeItem.withArgs(returnedAttributes).returns(
@@ -1173,7 +1179,7 @@ describe('table', function () {
 
       table.destroy('test@test.com', 'Foo Bar', {ReturnValues: 'ALL_OLD'}, function (err, item) {
         serializer.buildKey.calledWith('test@test.com', 'Foo Bar', s).should.be.true;
-        docClient.delete.calledWith(request).should.be.true;
+        docClient.send.calledWith(helper.matchCommand('DeleteCommand', request)).should.be.true;
 
         item.get('name').should.equal('Foo Bar');
 
@@ -1193,7 +1199,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1205,14 +1211,14 @@ describe('table', function () {
         ConditionExpression : '(#name = :name)'
       };
 
-      docClient.delete.yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('DeleteCommand')).resolves({});
 
       serializer.serializeItem.withArgs(s, {name: 'Foo Bar'}, {expected : true}).returns(request.Expected);
       serializer.buildKey.returns(request.Key);
 
       table.destroy('test@test.com', {expected: {name : 'Foo Bar'}}, function () {
         serializer.buildKey.calledWith('test@test.com', null, s).should.be.true;
-        docClient.delete.calledWith(request).should.be.true;
+        docClient.send.calledWith(helper.matchCommand('DeleteCommand', request)).should.be.true;
 
         done();
       });
@@ -1230,7 +1236,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1239,10 +1245,10 @@ describe('table', function () {
         }
       };
 
-      docClient.delete.yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('DeleteCommand')).resolves({});
       table.destroy('test@test.com')
         .then(function () {
-          docClient.delete.calledWith(request);
+          docClient.send.calledWith(helper.matchCommand('DeleteCommand', request));
 
           done();
         });
@@ -1260,7 +1266,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1272,10 +1278,10 @@ describe('table', function () {
         }
       };
 
-      docClient.delete.yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('DeleteCommand')).resolves({});
       table.destroy('test@test.com', {expected: {name : 'Foo Bar'}});
 
-      docClient.delete.calledWith(request);
+      docClient.send.calledWith(helper.matchCommand('DeleteCommand', request));
 
       return done();
     });
@@ -1293,7 +1299,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1306,11 +1312,13 @@ describe('table', function () {
         ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }
       };
 
-      dynamodb.createTable.yields(null, {});
+      dynamodb.send = sinon.stub()
+        .withArgs(helper.matchCommand(CreateTableCommand, request))
+        .resolves({});
 
       table.createTable({readCapacity : 5, writeCapacity: 5}, function (err) {
         expect(err).to.be.null;
-        dynamodb.createTable.calledWith(request).should.be.true;
+        dynamodb.send.calledWith(helper.matchCommand(CreateTableCommand, request)).should.be.true;
         done();
       });
 
@@ -1328,7 +1336,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1343,11 +1351,13 @@ describe('table', function () {
         ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }
       };
 
-      dynamodb.createTable.yields(null, {});
+      dynamodb.send = sinon.stub()
+        .withArgs(helper.matchCommand(CreateTableCommand, request))
+        .resolves({});
 
       table.createTable({readCapacity : 5, writeCapacity: 5}, function (err) {
         expect(err).to.be.null;
-        dynamodb.createTable.calledWith(request).should.be.true;
+        dynamodb.send.calledWith(helper.matchCommand(CreateTableCommand, request)).should.be.true;
         done();
       });
 
@@ -1369,7 +1379,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1397,11 +1407,11 @@ describe('table', function () {
         ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }
       };
 
-      dynamodb.createTable.yields(null, {});
+      dynamodb.send.withArgs(helper.matchCommand('CreateTableCommand')).resolves({});
 
       table.createTable({readCapacity : 5, writeCapacity: 5}, function (err) {
         expect(err).to.be.null;
-        dynamodb.createTable.calledWith(request).should.be.true;
+        dynamodb.send.calledWith(helper.matchCommand('CreateTableCommand', request)).should.be.true;
         done();
       });
     });
@@ -1422,7 +1432,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('gameScores', s, serializer, docClient, logger);
+      table = new Table('gameScores', s, serializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'gameScores',
@@ -1451,11 +1461,11 @@ describe('table', function () {
         ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }
       };
 
-      dynamodb.createTable.yields(null, {});
+      dynamodb.send.withArgs(helper.matchCommand('CreateTableCommand')).resolves({});
 
       table.createTable({readCapacity : 5, writeCapacity: 5}, function (err) {
         expect(err).to.be.null;
-        dynamodb.createTable.calledWith(request).should.be.true;
+        dynamodb.send.calledWith(helper.matchCommand('CreateTableCommand', request)).should.be.true;
         done();
       });
     });
@@ -1482,7 +1492,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('gameScores', s, serializer, docClient, logger);
+      table = new Table('gameScores', s, serializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'gameScores',
@@ -1512,11 +1522,11 @@ describe('table', function () {
         ProvisionedThroughput: { ReadCapacityUnits: 5, WriteCapacityUnits: 5 }
       };
 
-      dynamodb.createTable.yields(null, {});
+      dynamodb.send.withArgs(helper.matchCommand('CreateTableCommand')).resolves({});
 
       table.createTable({readCapacity : 5, writeCapacity: 5}, function (err) {
         expect(err).to.be.null;
-        dynamodb.createTable.calledWith(request).should.be.true;
+        dynamodb.send.calledWith(helper.matchCommand('CreateTableCommand', request)).should.be.true;
         done();
       });
     });
@@ -1535,17 +1545,17 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       var request = {
         TableName: 'accounts'
       };
 
-      dynamodb.describeTable.yields(null, {});
+      dynamodb.send.withArgs(helper.matchCommand('DescribeTableCommand')).resolves({});
 
       table.describeTable(function (err) {
         expect(err).to.be.null;
-        dynamodb.describeTable.calledWith(request).should.be.true;
+        dynamodb.send.calledWith(helper.matchCommand('DescribeTableCommand', request)).should.be.true;
         done();
       });
     });
@@ -1565,7 +1575,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
     });
 
     it('should make update table request', function (done) {
@@ -1574,12 +1584,12 @@ describe('table', function () {
         ProvisionedThroughput: { ReadCapacityUnits: 4, WriteCapacityUnits: 2 }
       };
 
-      dynamodb.describeTable.yields(null, {});
-      dynamodb.updateTable.yields(null, {});
+      dynamodb.send.withArgs(helper.matchCommand('DescribeTableCommand')).resolves({});
+      dynamodb.send.withArgs(helper.matchCommand('UpdateTableCommand')).resolves({});
 
       table.updateTable({readCapacity: 4, writeCapacity: 2}, function (err) {
         expect(err).to.be.null;
-        dynamodb.updateTable.calledWith(request).should.be.true;
+        dynamodb.send.calledWith(helper.matchCommand('UpdateTableCommand', request)).should.be.true;
         done();
       });
     });
@@ -1590,12 +1600,12 @@ describe('table', function () {
         ProvisionedThroughput: { ReadCapacityUnits: 2, WriteCapacityUnits: 1 }
       };
 
-      dynamodb.describeTable.yields(null, {});
-      dynamodb.updateTable.yields(null, {});
+      dynamodb.send.withArgs(helper.matchCommand('DescribeTableCommand')).resolves({});
+      dynamodb.send.withArgs(helper.matchCommand('UpdateTableCommand')).resolves({});
 
       table.updateTable({readCapacity: 2, writeCapacity: 1})
         .then(function () {
-          dynamodb.updateTable.calledWith(request).should.be.true;
+          dynamodb.send.calledWith(helper.matchCommand('UpdateTableCommand', request)).should.be.true;
           done();
         })
         .catch(function () {
@@ -1618,7 +1628,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
     });
 
     it('should make delete table request', function (done) {
@@ -1626,11 +1636,11 @@ describe('table', function () {
         TableName: 'accounts'
       };
 
-      dynamodb.deleteTable.yields(null, {});
+      dynamodb.send.withArgs(helper.matchCommand('DeleteTableCommand')).resolves({});
 
       table.deleteTable(function (err) {
         expect(err).to.be.null;
-        dynamodb.deleteTable.calledWith(request).should.be.true;
+        dynamodb.send.calledWith(helper.matchCommand('DeleteTableCommand', request)).should.be.true;
         done();
       });
     });
@@ -1640,11 +1650,11 @@ describe('table', function () {
         TableName: 'accounts',
       };
 
-      dynamodb.deleteTable.yields(null, {});
+      dynamodb.send.withArgs(helper.matchCommand('DeleteTableCommand')).resolves({});
 
       table.deleteTable()
         .then(function () {
-          dynamodb.deleteTable.calledWith(request).should.be.true;
+          dynamodb.send.calledWith(helper.matchCommand('DeleteTableCommand', request)).should.be.true;
 
           done();
         })
@@ -1668,7 +1678,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       table.tableName().should.eql('accounts');
     });
@@ -1685,7 +1695,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       table.tableName().should.eql('accounts-2014-03');
     });
@@ -1709,7 +1719,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
       table.tableName().should.eql('accounts_' + dateString);
     });
@@ -1733,10 +1743,10 @@ describe('table', function () {
 
         var s = new Schema(config);
 
-        table = new Table('accounts', s, serializer, docClient, logger);
+        table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
         var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
-        docClient.put.yields(null, {});
+        docClient.send.withArgs(helper.matchCommand('PutCommand')).resolves({});
 
         serializer.serializeItem.withArgs(s, {email : 'test@test.com', name : 'Tommy', age : 23}).returns({});
 
@@ -1775,7 +1785,7 @@ describe('table', function () {
 
         var s = new Schema(config);
 
-        table = new Table('accounts', s, serializer, docClient, logger);
+        table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
         table.before('create', function (data, next) {
           return next(new Error('fail'));
@@ -1801,10 +1811,10 @@ describe('table', function () {
 
         var s = new Schema(config);
 
-        table = new Table('accounts', s, serializer, docClient, logger);
+        table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
         var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
-        docClient.put.yields(null, {});
+        docClient.send.withArgs(helper.matchCommand('PutCommand')).resolves({});
 
         serializer.serializeItem.withArgs(s, item).returns({});
 
@@ -1832,10 +1842,10 @@ describe('table', function () {
 
         var s = new Schema(config);
 
-        table = new Table('accounts', s, serializer, docClient, logger);
+        table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
         var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
-        docClient.update.yields(null, {});
+        docClient.send.withArgs(helper.matchCommand('UpdateCommand')).rejects(null, {});
 
         serializer.serializeItem.withArgs(s, item).returns({});
 
@@ -1844,7 +1854,7 @@ describe('table', function () {
         serializer.serializeItemForUpdate.withArgs(s, 'PUT', modified).returns({});
 
         serializer.deserializeItem.returns(modified);
-        docClient.update.yields(null, {});
+        docClient.send.withArgs(helper.matchCommand('UpdateCommand')).resolves({});
 
         var called = false;
         table.before('update', function (data, next) {
@@ -1873,7 +1883,7 @@ describe('table', function () {
 
         var s = new Schema(config);
 
-        table = new Table('accounts', s, serializer, docClient, logger);
+        table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
         table.before('update', function (data, next) {
           return next(new Error('fail'));
@@ -1899,10 +1909,10 @@ describe('table', function () {
 
         var s = new Schema(config);
 
-        table = new Table('accounts', s, serializer, docClient, logger);
+        table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
         var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
-        docClient.update.yields(null, {});
+        docClient.send.withArgs(helper.matchCommand('UpdateCommand')).rejects(null, {});
 
         serializer.serializeItem.withArgs(s, item).returns({});
 
@@ -1910,7 +1920,7 @@ describe('table', function () {
         serializer.serializeItemForUpdate.returns({});
 
         serializer.deserializeItem.returns(item);
-        docClient.update.yields(null, {});
+        docClient.send.withArgs(helper.matchCommand('UpdateCommand')).resolves({});
 
         table.after('update', function () {
           return done();
@@ -1932,9 +1942,9 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, docClient, dynamodb, logger);
 
-      docClient.delete.yields(null, {});
+      docClient.send.withArgs(helper.matchCommand('DeleteCommand')).resolves({});
       serializer.buildKey.returns({});
 
       table.after('destroy', function () {

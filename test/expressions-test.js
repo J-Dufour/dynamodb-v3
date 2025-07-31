@@ -225,9 +225,9 @@ describe('expressions', function () {
       var stringSet = result.values[':names'];
 
       expect(result.values).to.have.keys([':names']);
-      expect(result.values[':names'].type).eql('String');
-      expect(stringSet.values).to.eql([ 'tester']);
-      expect(stringSet.type).to.eql( 'String');
+      // v3 uses native JavaScript Sets
+      expect(stringSet).to.be.instanceOf(Set);
+      expect(Array.from(stringSet)).to.eql(['tester']);
 
       expect(result.attributeNames).to.eql({
         '#names' : 'names'

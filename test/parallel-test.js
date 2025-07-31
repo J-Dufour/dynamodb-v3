@@ -32,7 +32,10 @@ describe('ParallelScan', function() {
   it('should return error', function (done) {
     var scan = new ParallelScan(table, serializer, 4);
 
-    table.docClient.scan.yields(new Error('fail'));
+    // In v3, we need to mock the send method with ScanCommand
+    table.docClient.send
+      .withArgs(helper.matchCommand('ScanCommand'))
+      .rejects(new Error('fail'));
 
     scan.exec(function (err, data) {
       expect(err).to.exist;
@@ -46,7 +49,10 @@ describe('ParallelScan', function() {
   it('should stream error', function (done) {
     var scan = new ParallelScan(table, serializer, 4);
 
-    table.docClient.scan.yields(new Error('fail'));
+    // In v3, we need to mock the send method with ScanCommand
+    table.docClient.send
+      .withArgs(helper.matchCommand('ScanCommand'))
+      .rejects(new Error('fail'));
 
     var stream = scan.exec();
 
@@ -64,7 +70,10 @@ describe('ParallelScan', function() {
   it('should promisify an error', function (done) {
     var scan = new ParallelScan(table, serializer, 4);
 
-    table.docClient.scan.yields(new Error('fail'));
+    // In v3, we need to mock the send method with ScanCommand
+    table.docClient.send
+      .withArgs(helper.matchCommand('ScanCommand'))
+      .rejects(new Error('fail'));
 
     var promise = scan.exec().promise();
     assert(typeof promise.then === 'function' && typeof promise.catch === 'function', 'Promise returned wasn\'t a promise.');
