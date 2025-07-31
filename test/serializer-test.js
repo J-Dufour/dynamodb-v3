@@ -10,7 +10,8 @@ var serializer = require('../lib/serializer'),
 chai.should();
 
 describe('Serializer', function () {
-  var docClient = helper.mockDocClient();
+  // Note: docClient not directly used in these tests but kept for potential Set operations
+  var docClient = helper.mockDocumentClient(); // jshint ignore:line
 
   describe('#buildKeys', function () {
 
@@ -224,9 +225,9 @@ describe('Serializer', function () {
 
       var s = new Schema(config);
 
-      var item = serializer.serializeItem(s, {data: 'hello', bin : new Buffer('binary')});
+      var item = serializer.serializeItem(s, {data: 'hello', bin : Buffer.from('binary')});
 
-      item.should.eql({data: new Buffer('hello'), bin : new Buffer('binary')});
+      item.should.eql({data: Buffer.from('hello'), bin : Buffer.from('binary')});
     });
 
     it('should serialize number attribute with value zero', function () {
@@ -296,10 +297,11 @@ describe('Serializer', function () {
 
       var item = serializer.serializeItem(s, {names: ['Tim', 'Steve', 'Bob']});
 
-      var stringSet = docClient.createSet(['Tim', 'Steve', 'Bob']);
+      var stringSet = new Set(['Tim', 'Steve', 'Bob']);
 
-      item.names.type.should.eql('String');
-      item.names.values.should.eql(stringSet.values);
+      // In v3, sets are returned as native JavaScript Sets, not the old {type, values} format
+      item.names.should.be.instanceof(Set);
+      item.names.should.eql(stringSet);
     });
 
     it('should serialize single string set attribute', function () {
@@ -315,9 +317,10 @@ describe('Serializer', function () {
 
       var item = serializer.serializeItem(s, {names: 'Tim'});
 
-      var stringSet = docClient.createSet(['Tim']);
-      item.names.type.should.eql('String');
-      item.names.values.should.eql(stringSet.values);
+      var stringSet = new Set(['Tim']);
+      // In v3, sets are returned as native JavaScript Sets, not the old {type, values} format
+      item.names.should.be.instanceof(Set);
+      item.names.should.eql(stringSet);
     });
 
     it('should number set attribute', function () {
@@ -333,9 +336,10 @@ describe('Serializer', function () {
 
       var item = serializer.serializeItem(s, {scores: [2, 4, 6, 8]});
 
-      var numberSet = docClient.createSet([2, 4, 6, 8]);
-      item.scores.type.should.eql('Number');
-      item.scores.values.should.eql(numberSet.values);
+      var numberSet = new Set([2, 4, 6, 8]);
+      // In v3, sets are returned as native JavaScript Sets, not the old {type, values} format
+      item.scores.should.be.instanceof(Set);
+      item.scores.should.eql(numberSet);
     });
 
     it('should single number set attribute', function () {
@@ -351,9 +355,10 @@ describe('Serializer', function () {
 
       var item = serializer.serializeItem(s, {scores: 2});
 
-      var numberSet = docClient.createSet([2]);
-      item.scores.type.should.eql('Number');
-      item.scores.values.should.eql(numberSet.values);
+      var numberSet = new Set([2]);
+      // In v3, sets are returned as native JavaScript Sets, not the old {type, values} format
+      item.scores.should.be.instanceof(Set);
+      item.scores.should.eql(numberSet);
     });
 
     it('should serialize binary set attribute', function () {
@@ -369,9 +374,10 @@ describe('Serializer', function () {
 
       var item = serializer.serializeItem(s, {data: ['hello', 'world']});
 
-      var binarySet = docClient.createSet([new Buffer('hello'), new Buffer('world')]);
-      item.data.type.should.eql('Binary');
-      item.data.values.should.eql(binarySet.values);
+      var binarySet = new Set([new Uint8Array(Buffer.from('hello')), new Uint8Array(Buffer.from('world'))]);
+      // In v3, sets are returned as native JavaScript Sets, not the old {type, values} format
+      item.data.should.be.instanceof(Set);
+      item.data.should.eql(binarySet);
     });
 
     it('should serialize single binary set attribute', function () {
@@ -387,9 +393,10 @@ describe('Serializer', function () {
 
       var item = serializer.serializeItem(s, {data: 'hello'});
 
-      var binarySet = docClient.createSet([new Buffer('hello')]);
-      item.data.type.should.eql('Binary');
-      item.data.values.should.eql(binarySet.values);
+      var binarySet = new Set([new Uint8Array(Buffer.from('hello'))]);
+      // In v3, sets are returned as native JavaScript Sets, not the old {type, values} format
+      item.data.should.be.instanceof(Set);
+      item.data.should.eql(binarySet);
     });
 
     it('should serialize uuid attribute', function () {
@@ -496,10 +503,11 @@ describe('Serializer', function () {
       item.data.first.should.eql('Test');
       item.data.flag.should.eql(true);
 
-      var stringSet = docClient.createSet(['a', 'b', 'c']);
+      var stringSet = new Set(['a', 'b', 'c']);
 
-      item.data.nicks.type.should.eql('String');
-      item.data.nicks.values.should.eql(stringSet.values);
+      // In v3, sets are returned as native JavaScript Sets, not the old {type, values} format
+      item.data.nicks.should.be.instanceof(Set);
+      item.data.nicks.should.eql(stringSet);
     });
 
     it('should serialize arrays', function () {
@@ -555,7 +563,7 @@ describe('Serializer', function () {
     });
 
     it('should return values in StringSet', function () {
-      var itemResp = {names : docClient.createSet(['a', 'b', 'c'])};
+      var itemResp = {names : ['a', 'b', 'c']};
 
       var item = serializer.deserializeItem(itemResp);
 
@@ -563,7 +571,7 @@ describe('Serializer', function () {
     });
 
     it('should return values in NumberSet', function () {
-      var itemResp = {scores : docClient.createSet([1, 2, 3])};
+      var itemResp = {scores : [1, 2, 3]};
 
       var item = serializer.deserializeItem(itemResp);
 
@@ -579,17 +587,17 @@ describe('Serializer', function () {
     it('should return nested values', function () {
       var itemResp = {
         name : 'foo bar',
-        scores : docClient.createSet([1, 2, 3]),
+        scores : [1, 2, 3],
         things : [{
           title : 'item 1',
-          letters : docClient.createSet(['a', 'b', 'c'])
+          letters : ['a', 'b', 'c']
         }, {
           title : 'item 2',
-          letters : docClient.createSet(['x', 'y', 'z'])
+          letters : ['x', 'y', 'z']
         }],
         info : {
           name : 'baz',
-          ages : docClient.createSet([20, 21, 22])
+          ages : [20, 21, 22]
         }
       };
 
@@ -666,10 +674,11 @@ describe('Serializer', function () {
       item.name.should.eql({Action : 'PUT', Value : 'Tim Test'});
       item.age.should.eql({Action : 'PUT', Value : 25});
 
-      var numberSet = docClient.createSet([94, 92, 100]);
+      var numberSet = new Set([94, 92, 100]);
       item.scores.Action.should.eql('PUT');
-      item.scores.Value.type.should.eql('Number');
-      item.scores.Value.values.should.eql(numberSet.values);
+      // In v3, sets are returned as native JavaScript Sets, not the old {type, values} format
+      item.scores.Value.should.be.instanceof(Set);
+      item.scores.Value.should.eql(numberSet);
     });
 
     it('should serialize null value to a DELETE action', function () {
@@ -743,10 +752,11 @@ describe('Serializer', function () {
 
       item.age.should.eql({Action: 'ADD', Value: 1});
 
-      var stringSet = docClient.createSet(['foo', 'bar']);
+      var stringSet = new Set(['foo', 'bar']);
       item.names.Action.should.eql('ADD');
-      item.names.Value.type.should.eql('String');
-      item.names.Value.values.should.eql(stringSet.values);
+      // In v3, sets are returned as native JavaScript Sets, not the old {type, values} format
+      item.names.Value.should.be.instanceof(Set);
+      item.names.Value.should.eql(stringSet);
     });
 
     it('should serialize delete operations', function () {
@@ -764,15 +774,17 @@ describe('Serializer', function () {
       var update = {email: 'test@test.com', ages: {$del : [2, 3]}, names : {$del: ['foo', 'bar']}};
       var item = serializer.serializeItemForUpdate(s, 'PUT', update);
 
-      var stringSet = docClient.createSet(['foo', 'bar']);
+      var stringSet = new Set(['foo', 'bar']);
       item.names.Action.should.eql('DELETE');
-      item.names.Value.type.should.eql('String');
-      item.names.Value.values.should.eql(stringSet.values);
+      // In v3, sets are returned as native JavaScript Sets, not the old {type, values} format
+      item.names.Value.should.be.instanceof(Set);
+      item.names.Value.should.eql(stringSet);
 
-      var numberSet = docClient.createSet([2, 3]);
+      var numberSet = new Set([2, 3]);
       item.ages.Action.should.eql('DELETE');
-      item.ages.Value.type.should.eql('Number');
-      item.ages.Value.values.should.eql(numberSet.values);
+      // In v3, sets are returned as native JavaScript Sets, not the old {type, values} format
+      item.ages.Value.should.be.instanceof(Set);
+      item.ages.Value.should.eql(numberSet);
 
     });
 

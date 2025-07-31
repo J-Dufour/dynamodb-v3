@@ -14,7 +14,7 @@ describe('Create Tables Integration Tests', function() {
   this.timeout(0);
 
   before(function () {
-    dynamo.dynamoDriver(helper.realDynamoDB());
+    dynamo.dynamoDriver(helper.realDynamoDBClient());
   });
 
   afterEach(function () {
@@ -367,7 +367,7 @@ describe('Update Tables Integration Tests', function() {
   now.description = 'Date.now()';
 
   before(function (done) {
-    dynamo.dynamoDriver(helper.realDynamoDB());
+    dynamo.dynamoDriver(helper.realDynamoDBClient());
 
     tableName = helper.randomName('dynamo-updateTable-Tweets');
 

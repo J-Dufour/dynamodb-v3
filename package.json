@@ -3,7 +3,8 @@
   "version": "1.3.0",
   "contributors": [
     "Ryan Fitzgerald <ryan@codebrewstudios.com>",
-    "Greg Sabia Tucker <greg@narrowlabs.com>"
+    "Greg Sabia Tucker <greg@narrowlabs.com>",
+    "Jeremy Dufour <dufour.dev@proton.me>"
   ],
   "description": "DynamoDB data mapper for node.js",
   "main": "index.js",
@@ -12,7 +13,7 @@
     "test-standalone": "npm run dynamodb-local & sleep 10 && npm test",
     "dynamodb-local": "./test/bin/dynamodb-local"
   },
-  "repository": "git://github.com/baseprime/dynamodb.git",
+  "repository": "github:J-Dufour/dynamodb-v3.git",
   "keywords": [
     "datamapper",
     "DynamoDB",
@@ -25,10 +26,11 @@
   },
   "license": "MIT",
   "dependencies": {
-    "joi": "^17.2.1",
+    "@aws-sdk/client-dynamodb": "^3.856.0",
+    "@aws-sdk/lib-dynamodb": "^3.856.0",
     "async": "^2.6.3",
-    "aws-sdk": "^2.756.0",
     "bunyan": "^1.8.14",
+    "joi": "^17.2.1",
     "lodash": "^4.17.20",
     "stream-to-promise": "^2.2.0",
     "uuid": "^7.0.3"

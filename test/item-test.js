@@ -26,7 +26,7 @@ describe('item', function() {
 
     var schema = new Schema(config);
 
-    table = new Table('mockTable', schema, serializer, helper.mockDocClient(), helper.testLogger());
+    table = new Table('mockTable', schema, serializer, helper.mockDocClient(), helper.mockDynamoDBClient(), helper.testLogger());
   });
 
   it('JSON.stringify should only serialize attrs', function() {
@@ -40,7 +40,10 @@ describe('item', function() {
   describe('#save', function () {
 
     it('should return error', function (done) {
-      table.docClient.put.yields(new Error('fail'));
+      // In v3, we need to mock the send method with PutCommand
+      table.docClient.send
+        .withArgs(helper.matchCommand('PutCommand'))
+        .rejects(new Error('fail'));
 
       var attrs = {num: 1, name: 'foo'};
       var item = new Item(attrs, table);
@@ -51,30 +54,36 @@ describe('item', function() {
 
         return done();
       });
+    });
 
-      it('should reject an error with a promise', function (done) {
-        table.docClient.put.yields(new Error('fail'));
+    it('should reject an error with a promise', function (done) {
+      // In v3, we need to mock the send method with PutCommand
+      table.docClient.send
+        .withArgs(helper.matchCommand('PutCommand'))
+        .rejects(new Error('fail'));
 
-        var attrs = {num: 1, name: 'foo'};
-        var item = new Item(attrs, table);
+      var attrs = {num: 1, name: 'foo'};
+      var item = new Item(attrs, table);
 
-        item.save()
-          .then(function () {
-            assert(false, 'then should not be called');
-          })
-          .catch(function (err) {
-            expect(err).to.exist;
+      item.save()
+        .then(function () {
+          assert(false, 'then should not be called');
+        })
+        .catch(function (err) {
+          expect(err).to.exist;
 
-            return done();
-          });
-      });
+          return done();
+        });
     });
 
   });
 
   describe('#update', function () {
     it('should return item', function (done) {
-      table.docClient.update.yields(null, {Attributes : {num : 1, name : 'foo'}});
+      // In v3, we need to mock the send method with UpdateCommand
+      table.docClient.send
+        .withArgs(helper.matchCommand('UpdateCommand'))
+        .resolves({Attributes : {num : 1, name : 'foo'}});
 
       var attrs = {num: 1, name: 'foo'};
       var item = new Item(attrs, table);
@@ -88,7 +97,10 @@ describe('item', function() {
     });
 
     it('should resolve to an item with a promise', function (done) {
-      table.docClient.update.yields(null, {Attributes : {num : 1, name : 'foo'}});
+      // In v3, we need to mock the send method with UpdateCommand
+      table.docClient.send
+        .withArgs(helper.matchCommand('UpdateCommand'))
+        .resolves({Attributes : {num : 1, name : 'foo'}});
 
       var attrs = {num: 1, name: 'foo'};
       var item = new Item(attrs, table);
@@ -106,7 +118,10 @@ describe('item', function() {
 
 
     it('should return error', function (done) {
-      table.docClient.update.yields(new Error('fail'));
+      // In v3, we need to mock the send method with UpdateCommand
+      table.docClient.send
+        .withArgs(helper.matchCommand('UpdateCommand'))
+        .rejects(new Error('fail'));
 
       var attrs = {num: 1, name: 'foo'};
       var item = new Item(attrs, table);
@@ -121,7 +136,10 @@ describe('item', function() {
     });
 
     it('should return null', function (done) {
-      table.docClient.update.yields(null, {});
+      // In v3, we need to mock the send method with UpdateCommand
+      table.docClient.send
+        .withArgs(helper.matchCommand('UpdateCommand'))
+        .resolves({});
 
       var attrs = {num: 1, name: 'foo'};
       var item = new Item(attrs, table);

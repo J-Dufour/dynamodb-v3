@@ -84,9 +84,12 @@ describe('Query', function () {
       };
 
       var s = new Schema(config);
-      var t = new Table('accounts', s, Serializer, helper.mockDocClient(), helper.testLogger());
+      var t = new Table('accounts', s, Serializer, helper.mockDocClient(), helper.mockDynamoDBClient(), helper.testLogger());
 
-      t.docClient.query.yields(new Error('Fail'));
+      // In v3, we need to mock the send method with QueryCommand
+      t.docClient.send
+        .withArgs(helper.matchCommand('QueryCommand'))
+        .rejects(new Error('Fail'));
 
       new Query('tim', t, Serializer).exec(function (err, results) {
         expect(err).to.exist;
@@ -107,9 +110,12 @@ describe('Query', function () {
 
       var s = new Schema(config);
 
-      var t = new Table('accounts', s, Serializer, helper.mockDocClient(), helper.testLogger());
+      var t = new Table('accounts', s, Serializer, helper.mockDocClient(), helper.mockDynamoDBClient(), helper.testLogger());
 
-      t.docClient.query.yields(new Error('Fail'));
+      // In v3, we need to mock the send method with QueryCommand
+      t.docClient.send
+        .withArgs(helper.matchCommand('QueryCommand'))
+        .rejects(new Error('Fail'));
 
       var stream = new Query('tim', t, Serializer).exec();
 
@@ -136,9 +142,12 @@ describe('Query', function () {
 
       var s = new Schema(config);
 
-      var t = new Table('accounts', s, Serializer, helper.mockDocClient(), helper.testLogger());
+      var t = new Table('accounts', s, Serializer, helper.mockDocClient(), helper.mockDynamoDBClient(), helper.testLogger());
 
-      t.docClient.query.yields(new Error('Fail'));
+      // In v3, we need to mock the send method with QueryCommand
+      t.docClient.send
+        .withArgs(helper.matchCommand('QueryCommand'))
+        .rejects(new Error('Fail'));
 
       var promise = new Query('tim', t, Serializer).exec().promise();
 
@@ -166,14 +175,16 @@ describe('Query', function () {
 
       var s = new Schema(config);
 
-      var t = new Table('accounts', s, Serializer, helper.mockDocClient(), helper.testLogger());
+      var t = new Table('accounts', s, Serializer, helper.mockDocClient(), helper.mockDynamoDBClient(), helper.testLogger());
 
       var err = new Error('RetryableException');
       err.retryable = true;
 
-      t.docClient.query
-        .onCall(0).yields(err)
-        .onCall(1).yields(null, {Items : [ { name : 'Tim Tester', email : 'test@test.com'} ]});
+      // In v3, we need to mock the send method with QueryCommand using onCall
+      t.docClient.send
+        .withArgs(helper.matchCommand('QueryCommand'))
+        .onCall(0).rejects(err)
+        .onCall(1).resolves({Items : [ { name : 'Tim Tester', email : 'test@test.com'} ]});
 
       var stream = new Query('tim', t, Serializer).exec();
 
