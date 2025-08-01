@@ -1,5 +1,5 @@
 
-`dynamodb` is a [DynamoDB][5] data mapper for [node.js][1].
+`dynamodb-v3` is a fork of (dynamodb)[https://github.com/baseprime/dynamodb], a [DynamoDB][5] data mapper for [node.js][1].
 
 ## Features
 * Simplified data modeling and mapping to DynamoDB types
@@ -12,20 +12,20 @@
 
 ## Installation
 
-    npm install dynamodb
+    npm install dynamodb-v3
 
 ## Getting Started
 First, you need to configure the [AWS SDK][2] with your credentials.
 
 ```js
-var dynamo = require('dynamodb');
+var dynamo = require('dynamodb-v3');
 dynamo.AWS.config.loadFromPath('credentials.json');
 ```
 
 When running on EC2 its recommended to leverage EC2 IAM roles. If you have configured your instance to use IAM roles, DynamoDB will automatically select these credentials for use in your application, and you do not need to manually provide credentials in any other format.
 
 ```js
-var dynamo = require('dynamodb');
+var dynamo = require('dynamodb-v3');
 dynamo.AWS.config.update({region: "REGION"}); // region must be set
 ```
 
@@ -33,7 +33,7 @@ You can also directly pass in your access key id, secret and region.
   * Its recommend you not hard-code credentials inside an application. Use this method only for small personal scripts or for testing purposes.
 
 ```js
-var dynamo = require('dynamodb');
+var dynamo = require('dynamodb-v3');
 dynamo.AWS.config.update({accessKeyId: 'AKID', secretAccessKey: 'SECRET', region: "REGION"});
 ```
 
@@ -1077,12 +1077,15 @@ See the [examples][0] for more working sample code.
 
 ### Support
 
-DynamoDB is provided as-is, free of charge. For support, you have a few choices:
+DynamoDB-v3 is provided as-is, free of charge.
 
-- Ask your support question on [Stackoverflow.com](http://stackoverflow.com), and tag your question with **dynamodb**.
-- If you believe you have found a bug in dynamodb, please submit a support ticket on the [Github Issues page for dynamo](http://github.com/baseprime/dynamo/issues). We'll get to them as soon as we can.
+If you believe you have found a bug in dynamodb-v3, please submit a support ticket on the [Github Issues page for dynamodb-v3](https://github.com/J-Dufour/dynamodb-v3/issues).
 
 ### Maintainers
+
+- [Jeremy Dufour](http://github.com/J-Dufour) 
+
+### Maintainers of dynamodb
 
 - [Greg Sabia Tucker](http://github.com/baseprime) ([@baseprime](https://twitter.com/bytecipher))
 
