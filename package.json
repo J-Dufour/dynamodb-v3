@@ -1,5 +1,5 @@
 {
-  "name": "dynamodb",
+  "name": "dynamodb-v3",
   "version": "2.0.0",
   "contributors": [
     "Ryan Fitzgerald <ryan@codebrewstudios.com>",
