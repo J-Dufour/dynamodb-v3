@@ -1,14 +1,15 @@
 'use strict';
 
 var sinon  = require('sinon'),
-    AWS    = require('aws-sdk'),
+    {DynamoDB}  = require('@aws-sdk/client-dynamodb'),
+  { DynamoDBDocument }    = require('@aws-sdk/lib-dynamodb/'),
     Table  = require('../lib/table'),
     _      = require('lodash'),
     bunyan = require('bunyan');
 
 exports.mockDynamoDB = function () {
   var opts = { endpoint : 'http://localhost:8000', region: 'us-west-2', apiVersion: '2012-08-10' };
-  var db = new AWS.DynamoDB(opts);
+  var db = new DynamoDB(opts);
 
   db.scan          = sinon.stub();
   db.putItem       = sinon.stub();
@@ -28,11 +29,11 @@ exports.mockDynamoDB = function () {
 
 exports.realDynamoDB = function () {
   var opts = { endpoint : 'http://localhost:8000', region: 'us-west-2', apiVersion: '2012-08-10' };
-  return new AWS.DynamoDB(opts);
+  return new DynamoDB(opts);
 };
 
 exports.mockDocClient = function () {
-  var client = new AWS.DynamoDB.DocumentClient({service : exports.mockDynamoDB()});
+  var client = DynamoDBDocument.from(exports.mockDynamoDB());
 
   var operations= [
     'batchGet',
@@ -48,19 +49,6 @@ exports.mockDocClient = function () {
   _.each(operations, function (op) {
     client[op] = sinon.stub();
   });
-
-  client.service.scan          = sinon.stub();
-  client.service.putItem       = sinon.stub();
-  client.service.deleteItem    = sinon.stub();
-  client.service.query         = sinon.stub();
-  client.service.getItem       = sinon.stub();
-  client.service.updateItem    = sinon.stub();
-  client.service.createTable   = sinon.stub();
-  client.service.describeTable = sinon.stub();
-  client.service.updateTable   = sinon.stub();
-  client.service.deleteTable   = sinon.stub();
-  client.service.batchGetItem  = sinon.stub();
-  client.service.batchWriteItem = sinon.stub();
 
   return client;
 };
@@ -99,4 +87,24 @@ exports.testLogger = function() {
     serializers : {err: bunyan.stdSerializers.err},
     level : bunyan.FATAL
   });
+};
+
+exports.mockClients = function () {
+  var dynamodb = exports.mockDynamoDB();
+  var docClient = exports.mockDocClient();
+  
+  return {
+    docClient: docClient,
+    dynamodb: dynamodb
+  };
+};
+
+exports.mockClientsWithRawDynamoDB = function () {
+  var dynamodb = exports.mockDynamoDB();
+  var docClient = exports.mockDocClient(); // Provide both clients
+  
+  return {
+    docClient: docClient,
+    dynamodb: dynamodb
+  };
 };

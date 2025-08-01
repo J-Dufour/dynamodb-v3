@@ -21,12 +21,14 @@ describe('table', function () {
       serializer,
       docClient,
       dynamodb,
+      clients,
       logger;
 
   beforeEach(function () {
     serializer = helper.mockSerializer(),
-    docClient = helper.mockDocClient();
-    dynamodb = docClient.service;
+    clients = helper.mockClients();
+    docClient = clients.docClient;
+    dynamodb = clients.dynamodb;
     logger = helper.testLogger();
   });
 
@@ -39,7 +41,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -68,7 +70,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -102,7 +104,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -134,7 +136,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -165,7 +167,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -202,7 +204,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts_2014',
@@ -231,7 +233,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       docClient.get.yields(new Error('Fail'));
 
@@ -258,7 +260,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -294,7 +296,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -332,13 +334,12 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var numberSet = sinon.match(function (value) {
-        var s = docClient.createSet([1, 2, 3]);
-
-        value.type.should.eql('Number');
-        value.values.should.eql(s.values);
+        // In AWS SDK v3, sets are native JavaScript Sets
+        value.should.be.instanceOf(Set);
+        Array.from(value).should.eql([1, 2, 3]);
 
         return true;
       }, 'NumberSet');
@@ -380,7 +381,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -414,7 +415,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -448,7 +449,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -483,7 +484,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -515,7 +516,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -549,7 +550,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -577,7 +578,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       table.create({email : 'test@test.com', name : [1, 2, 3]}, function (err, account) {
         expect(err).to.exist;
@@ -600,7 +601,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -636,7 +637,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -671,7 +672,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -708,7 +709,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -753,7 +754,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -800,7 +801,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -854,7 +855,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -895,7 +896,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       docClient.update.yields(new Error('Fail'));
 
@@ -920,7 +921,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       docClient.update.yields(new Error('Fail'));
 
@@ -953,7 +954,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       table.query('Bob').should.be.instanceof(Query);
     });
@@ -973,7 +974,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       table.scan().should.be.instanceof(Scan);
     });
@@ -993,7 +994,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1026,7 +1027,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1060,7 +1061,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1103,7 +1104,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1148,7 +1149,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1193,7 +1194,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1230,7 +1231,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1260,7 +1261,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, realSerializer, docClient, logger);
+      table = new Table('accounts', s, realSerializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1293,7 +1294,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1328,7 +1329,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1369,7 +1370,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       var request = {
         TableName: 'accounts',
@@ -1422,7 +1423,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('gameScores', s, serializer, docClient, logger);
+      table = new Table('gameScores', s, serializer, clients, logger);
 
       var request = {
         TableName: 'gameScores',
@@ -1482,7 +1483,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('gameScores', s, serializer, docClient, logger);
+      table = new Table('gameScores', s, serializer, clients, logger);
 
       var request = {
         TableName: 'gameScores',
@@ -1535,7 +1536,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       var request = {
         TableName: 'accounts'
@@ -1565,7 +1566,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
     });
 
     it('should make update table request', function (done) {
@@ -1618,7 +1619,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
     });
 
     it('should make delete table request', function (done) {
@@ -1668,7 +1669,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       table.tableName().should.eql('accounts');
     });
@@ -1685,7 +1686,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       table.tableName().should.eql('accounts-2014-03');
     });
@@ -1709,7 +1710,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       table.tableName().should.eql('accounts_' + dateString);
     });
@@ -1733,7 +1734,7 @@ describe('table', function () {
 
         var s = new Schema(config);
 
-        table = new Table('accounts', s, serializer, docClient, logger);
+        table = new Table('accounts', s, serializer, clients, logger);
 
         var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
         docClient.put.yields(null, {});
@@ -1775,7 +1776,7 @@ describe('table', function () {
 
         var s = new Schema(config);
 
-        table = new Table('accounts', s, serializer, docClient, logger);
+        table = new Table('accounts', s, serializer, clients, logger);
 
         table.before('create', function (data, next) {
           return next(new Error('fail'));
@@ -1801,7 +1802,7 @@ describe('table', function () {
 
         var s = new Schema(config);
 
-        table = new Table('accounts', s, serializer, docClient, logger);
+        table = new Table('accounts', s, serializer, clients, logger);
 
         var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
         docClient.put.yields(null, {});
@@ -1832,7 +1833,7 @@ describe('table', function () {
 
         var s = new Schema(config);
 
-        table = new Table('accounts', s, serializer, docClient, logger);
+        table = new Table('accounts', s, serializer, clients, logger);
 
         var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
         docClient.update.yields(null, {});
@@ -1873,7 +1874,7 @@ describe('table', function () {
 
         var s = new Schema(config);
 
-        table = new Table('accounts', s, serializer, docClient, logger);
+        table = new Table('accounts', s, serializer, clients, logger);
 
         table.before('update', function (data, next) {
           return next(new Error('fail'));
@@ -1899,7 +1900,7 @@ describe('table', function () {
 
         var s = new Schema(config);
 
-        table = new Table('accounts', s, serializer, docClient, logger);
+        table = new Table('accounts', s, serializer, clients, logger);
 
         var item = {email : 'test@test.com', name : 'Tim Test', age : 23};
         docClient.update.yields(null, {});
@@ -1932,7 +1933,7 @@ describe('table', function () {
 
       var s = new Schema(config);
 
-      table = new Table('accounts', s, serializer, docClient, logger);
+      table = new Table('accounts', s, serializer, clients, logger);
 
       docClient.delete.yields(null, {});
       serializer.buildKey.returns({});

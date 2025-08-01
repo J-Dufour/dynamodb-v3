@@ -21,7 +21,9 @@ describe('Query', function () {
 
     table = helper.mockTable();
     table.config = {name : 'accounts'};
-    table.docClient = helper.mockDocClient();
+    var clients = helper.mockClients();
+    table.docClient = clients.docClient;
+    table.dynamoDbClient = clients.dynamodb;
     table.log = helper.testLogger();
   });
 
@@ -84,7 +86,7 @@ describe('Query', function () {
       };
 
       var s = new Schema(config);
-      var t = new Table('accounts', s, Serializer, helper.mockDocClient(), helper.testLogger());
+      var t = new Table('accounts', s, Serializer, helper.mockClients(), helper.testLogger());
 
       t.docClient.query.yields(new Error('Fail'));
 
@@ -107,7 +109,7 @@ describe('Query', function () {
 
       var s = new Schema(config);
 
-      var t = new Table('accounts', s, Serializer, helper.mockDocClient(), helper.testLogger());
+      var t = new Table('accounts', s, Serializer, helper.mockClients(), helper.testLogger());
 
       t.docClient.query.yields(new Error('Fail'));
 
@@ -136,7 +138,7 @@ describe('Query', function () {
 
       var s = new Schema(config);
 
-      var t = new Table('accounts', s, Serializer, helper.mockDocClient(), helper.testLogger());
+      var t = new Table('accounts', s, Serializer, helper.mockClients(), helper.testLogger());
 
       t.docClient.query.yields(new Error('Fail'));
 
@@ -166,7 +168,7 @@ describe('Query', function () {
 
       var s = new Schema(config);
 
-      var t = new Table('accounts', s, Serializer, helper.mockDocClient(), helper.testLogger());
+      var t = new Table('accounts', s, Serializer, helper.mockClients(), helper.testLogger());
 
       var err = new Error('RetryableException');
       err.retryable = true;
