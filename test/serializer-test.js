@@ -4,13 +4,11 @@ var serializer = require('../lib/serializer'),
     chai       = require('chai'),
     expect     = chai.expect,
     Schema     = require('../lib/schema'),
-    helper     = require('./test-helper'),
     Joi        = require('joi');
 
 chai.should();
 
 describe('Serializer', function () {
-  var docClient = helper.mockDocClient();
 
   describe('#buildKeys', function () {
 
@@ -296,10 +294,10 @@ describe('Serializer', function () {
 
       var item = serializer.serializeItem(s, {names: ['Tim', 'Steve', 'Bob']});
 
-      var stringSet = docClient.createSet(['Tim', 'Steve', 'Bob']);
-
-      item.names.type.should.eql('String');
-      item.names.values.should.eql(stringSet.values);
+      item.names.should.be.instanceof(Set);
+      item.names.should.contain('Tim');
+      item.names.should.contain('Steve');
+      item.names.should.contain('Bob');
     });
 
     it('should serialize single string set attribute', function () {
@@ -315,9 +313,8 @@ describe('Serializer', function () {
 
       var item = serializer.serializeItem(s, {names: 'Tim'});
 
-      var stringSet = docClient.createSet(['Tim']);
-      item.names.type.should.eql('String');
-      item.names.values.should.eql(stringSet.values);
+      item.names.should.be.instanceof(Set);
+      item.names.should.contain('Tim');
     });
 
     it('should number set attribute', function () {
@@ -333,9 +330,11 @@ describe('Serializer', function () {
 
       var item = serializer.serializeItem(s, {scores: [2, 4, 6, 8]});
 
-      var numberSet = docClient.createSet([2, 4, 6, 8]);
-      item.scores.type.should.eql('Number');
-      item.scores.values.should.eql(numberSet.values);
+      item.scores.should.be.instanceof(Set);
+      item.scores.should.contain(2);
+      item.scores.should.contain(4);
+      item.scores.should.contain(6);
+      item.scores.should.contain(8);
     });
 
     it('should single number set attribute', function () {
@@ -351,9 +350,8 @@ describe('Serializer', function () {
 
       var item = serializer.serializeItem(s, {scores: 2});
 
-      var numberSet = docClient.createSet([2]);
-      item.scores.type.should.eql('Number');
-      item.scores.values.should.eql(numberSet.values);
+      item.scores.should.be.instanceof(Set);
+      item.scores.should.contain(2);
     });
 
     it('should serialize binary set attribute', function () {
@@ -369,9 +367,12 @@ describe('Serializer', function () {
 
       var item = serializer.serializeItem(s, {data: ['hello', 'world']});
 
-      var binarySet = docClient.createSet([new Buffer('hello'), new Buffer('world')]);
-      item.data.type.should.eql('Binary');
-      item.data.values.should.eql(binarySet.values);
+      item.data.should.be.instanceof(Set);
+      
+      var setArray = Array.from(item.data);
+      setArray.should.have.length(2);
+      setArray.some(buf => buf.equals(Buffer.from('hello'))).should.be.true;
+      setArray.some(buf => buf.equals(Buffer.from('world'))).should.be.true;
     });
 
     it('should serialize single binary set attribute', function () {
@@ -387,9 +388,11 @@ describe('Serializer', function () {
 
       var item = serializer.serializeItem(s, {data: 'hello'});
 
-      var binarySet = docClient.createSet([new Buffer('hello')]);
-      item.data.type.should.eql('Binary');
-      item.data.values.should.eql(binarySet.values);
+      item.data.should.be.instanceof(Set);
+      
+      var setArray = Array.from(item.data);
+      setArray.should.have.length(1);
+      setArray.some(buf => buf.equals(Buffer.from('hello'))).should.be.true;
     });
 
     it('should serialize uuid attribute', function () {
@@ -496,10 +499,10 @@ describe('Serializer', function () {
       item.data.first.should.eql('Test');
       item.data.flag.should.eql(true);
 
-      var stringSet = docClient.createSet(['a', 'b', 'c']);
-
-      item.data.nicks.type.should.eql('String');
-      item.data.nicks.values.should.eql(stringSet.values);
+      item.data.nicks.should.be.instanceof(Set);
+      item.data.nicks.should.contain('a');
+      item.data.nicks.should.contain('b');
+      item.data.nicks.should.contain('c');
     });
 
     it('should serialize arrays', function () {
@@ -555,7 +558,7 @@ describe('Serializer', function () {
     });
 
     it('should return values in StringSet', function () {
-      var itemResp = {names : docClient.createSet(['a', 'b', 'c'])};
+      var itemResp = {names : new Set(['a', 'b', 'c'])};
 
       var item = serializer.deserializeItem(itemResp);
 
@@ -563,7 +566,7 @@ describe('Serializer', function () {
     });
 
     it('should return values in NumberSet', function () {
-      var itemResp = {scores : docClient.createSet([1, 2, 3])};
+      var itemResp = {scores : new Set([1, 2, 3])};
 
       var item = serializer.deserializeItem(itemResp);
 
@@ -579,17 +582,17 @@ describe('Serializer', function () {
     it('should return nested values', function () {
       var itemResp = {
         name : 'foo bar',
-        scores : docClient.createSet([1, 2, 3]),
+        scores : new Set([1, 2, 3]),
         things : [{
           title : 'item 1',
-          letters : docClient.createSet(['a', 'b', 'c'])
+          letters : new Set(['a', 'b', 'c'])
         }, {
           title : 'item 2',
-          letters : docClient.createSet(['x', 'y', 'z'])
+          letters : new Set(['x', 'y', 'z'])
         }],
         info : {
           name : 'baz',
-          ages : docClient.createSet([20, 21, 22])
+          ages : new Set([20, 21, 22])
         }
       };
 
@@ -666,10 +669,11 @@ describe('Serializer', function () {
       item.name.should.eql({Action : 'PUT', Value : 'Tim Test'});
       item.age.should.eql({Action : 'PUT', Value : 25});
 
-      var numberSet = docClient.createSet([94, 92, 100]);
       item.scores.Action.should.eql('PUT');
-      item.scores.Value.type.should.eql('Number');
-      item.scores.Value.values.should.eql(numberSet.values);
+      item.scores.Value.should.be.instanceof(Set);
+      item.scores.Value.should.contain(94);
+      item.scores.Value.should.contain(92);
+      item.scores.Value.should.contain(100);
     });
 
     it('should serialize null value to a DELETE action', function () {
@@ -743,10 +747,10 @@ describe('Serializer', function () {
 
       item.age.should.eql({Action: 'ADD', Value: 1});
 
-      var stringSet = docClient.createSet(['foo', 'bar']);
       item.names.Action.should.eql('ADD');
-      item.names.Value.type.should.eql('String');
-      item.names.Value.values.should.eql(stringSet.values);
+      item.names.Value.should.be.instanceof(Set);
+      item.names.Value.should.contain('foo');
+      item.names.Value.should.contain('bar');
     });
 
     it('should serialize delete operations', function () {
@@ -764,15 +768,15 @@ describe('Serializer', function () {
       var update = {email: 'test@test.com', ages: {$del : [2, 3]}, names : {$del: ['foo', 'bar']}};
       var item = serializer.serializeItemForUpdate(s, 'PUT', update);
 
-      var stringSet = docClient.createSet(['foo', 'bar']);
       item.names.Action.should.eql('DELETE');
-      item.names.Value.type.should.eql('String');
-      item.names.Value.values.should.eql(stringSet.values);
+      item.names.Value.should.be.instanceof(Set);
+      item.names.Value.should.contain('foo');
+      item.names.Value.should.contain('bar');
 
-      var numberSet = docClient.createSet([2, 3]);
       item.ages.Action.should.eql('DELETE');
-      item.ages.Value.type.should.eql('Number');
-      item.ages.Value.values.should.eql(numberSet.values);
+      item.ages.Value.should.be.instanceof(Set);
+      item.ages.Value.should.contain(2);
+      item.ages.Value.should.contain(3);
 
     });
 

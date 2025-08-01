@@ -212,7 +212,7 @@ describe('DynamoDB Integration Tests', function() {
         var item2 = _.merge(item, {id : acc.get('id')});
         User.create(item2, params, function (error, acc) {
           expect(error).to.exist;
-          expect(error.code).to.eql('ConditionalCheckFailedException');
+          expect(error.name).to.eql('ConditionalCheckFailedException');
           expect(acc).to.not.exist;
 
           return done();
@@ -233,7 +233,7 @@ describe('DynamoDB Integration Tests', function() {
         var item2 = _.merge(item, {id : acc.get('id')});
         User.create(item2, opts, function (error, acc) {
           expect(error).to.exist;
-          expect(error.code).to.eql('ConditionalCheckFailedException');
+          expect(error.name).to.eql('ConditionalCheckFailedException');
           expect(acc).to.not.exist;
 
           return done();
@@ -251,7 +251,7 @@ describe('DynamoDB Integration Tests', function() {
         var item2 = _.merge(item, {id : acc.get('id')});
         User.create(item2, {overwrite : false}, function (error, acc) {
           expect(error).to.exist;
-          expect(error.code).to.eql('ConditionalCheckFailedException');
+          expect(error.name).to.eql('ConditionalCheckFailedException');
           expect(acc).to.not.exist;
 
           return done();
@@ -1043,7 +1043,7 @@ describe('DynamoDB Integration Tests', function() {
 
       User.destroy({id : 'dontexist'}, params, function (err, acc) {
         expect(err).to.exist;
-        expect(err.code).to.eql('ConditionalCheckFailedException');
+        expect(err.name).to.eql('ConditionalCheckFailedException');
         expect(acc).to.not.exist;
 
         return done();
@@ -1055,7 +1055,7 @@ describe('DynamoDB Integration Tests', function() {
 
       User.destroy({id : 'dontexist'}, opts, function (err, acc) {
         expect(err).to.exist;
-        expect(err.code).to.eql('ConditionalCheckFailedException');
+        expect(err.name).to.eql('ConditionalCheckFailedException');
         expect(acc).to.not.exist;
 
         return done();

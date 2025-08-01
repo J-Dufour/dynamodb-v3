@@ -1,7 +1,7 @@
 'use strict';
 
 var dynamo = require('../index'),
-    AWS    = require('aws-sdk'),
+    {DynamoDBDocument}    = require('@aws-sdk/lib-dynamodb'),
     helper = require('./test-helper'),
     Table  = require('../lib/table'),
     chai   = require('chai'),
@@ -107,13 +107,13 @@ describe('dynamo', function () {
       var dynamodb = helper.realDynamoDB();
       Account.config({dynamodb: dynamodb });
 
-      Account.docClient.service.config.endpoint.should.eq(dynamodb.config.endpoint);
+      Account.dynamoDbClient.config.endpoint.should.eq(dynamodb.config.endpoint);
     });
 
     it('should set document client', function () {
       var Account = dynamo.define('Account', {hashKey : 'id'});
 
-      var docClient = new AWS.DynamoDB.DocumentClient(helper.realDynamoDB());
+      var docClient = DynamoDBDocument.from(helper.realDynamoDB());
 
       Account.config({docClient: docClient });
 
@@ -128,8 +128,8 @@ describe('dynamo', function () {
       var dynamodb = helper.realDynamoDB();
       dynamo.dynamoDriver(dynamodb);
 
-      Account.docClient.service.config.endpoint.should.eq(dynamodb.config.endpoint);
-      Post.docClient.service.config.endpoint.should.eq(dynamodb.config.endpoint);
+      Account.dynamoDbClient.config.endpoint.should.eq(dynamodb.config.endpoint);
+      Post.dynamoDbClient.config.endpoint.should.eq(dynamodb.config.endpoint);
     });
 
     it('should continue to use globally set dynamodb driver', function () {
@@ -138,7 +138,7 @@ describe('dynamo', function () {
 
       var Account = dynamo.define('Account', {hashKey : 'id'});
 
-      Account.docClient.service.config.endpoint.should.eq(dynamodb.config.endpoint);
+      Account.dynamoDbClient.config.endpoint.should.eq(dynamodb.config.endpoint);
     });
 
   });
@@ -148,8 +148,8 @@ describe('dynamo', function () {
 
     beforeEach(function () {
       dynamo.reset();
-      // var dynamodb = helper.mockDynamoDB();
-      // dynamo.dynamoDriver(dynamodb);
+      var mockDB = helper.mockDynamoDB();
+      dynamo.dynamoDriver(mockDB);
       dynamo.documentClient(helper.mockDocClient());
       clock = sinon.useFakeTimers();
     });
@@ -171,7 +171,7 @@ describe('dynamo', function () {
         Table : { TableStatus : 'ACTIVE'}
       };
 
-      var dynamodb = Account.docClient.service;
+      var dynamodb = Account.dynamoDbClient;
 
       dynamodb.describeTable
         .onCall(0).yields(null, null)
@@ -193,7 +193,7 @@ describe('dynamo', function () {
     it('should return error', function (done) {
       var Account = dynamo.define('Account', {hashKey : 'id'});
 
-      var dynamodb = Account.docClient.service;
+      var dynamodb = Account.dynamoDbClient;
       dynamodb.describeTable.onCall(0).yields(null, null);
 
       dynamodb.createTable.yields(new Error('Fail'), null);
@@ -208,7 +208,7 @@ describe('dynamo', function () {
     it('should reject an error with promises', function (done) {
       var Account = dynamo.define('Account', {hashKey : 'id'});
 
-      var dynamodb = Account.docClient.service;
+      var dynamodb = Account.dynamoDbClient;
       dynamodb.describeTable.onCall(0).yields(null, null);
 
       dynamodb.createTable.yields(new Error('Fail'), null);
@@ -227,7 +227,7 @@ describe('dynamo', function () {
 
     it('should create model without callback', function (done) {
       var Account = dynamo.define('Account', {hashKey : 'id'});
-      var dynamodb = Account.docClient.service;
+      var dynamodb = Account.dynamoDbClient;
 
       var second = {
         Table : { TableStatus : 'PENDING'}
@@ -255,7 +255,7 @@ describe('dynamo', function () {
 
     it('should return error when waiting for table to become active', function (done) {
       var Account = dynamo.define('Account', {hashKey : 'id'});
-      var dynamodb = Account.docClient.service;
+      var dynamodb = Account.dynamoDbClient;
 
       var second = {
         Table : { TableStatus : 'PENDING'}
