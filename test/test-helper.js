@@ -98,13 +98,3 @@ exports.mockClients = function () {
     dynamodb: dynamodb
   };
 };
-
-exports.mockClientsWithRawDynamoDB = function () {
-  var dynamodb = exports.mockDynamoDB();
-  var docClient = exports.mockDocClient(); // Provide both clients
-  
-  return {
-    docClient: docClient,
-    dynamodb: dynamodb
-  };
-};
