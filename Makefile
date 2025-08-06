@@ -2,6 +2,9 @@ REPORTER ?= list
 SRC = $(shell find index.js lib -name "*.js" -type f | sort)
 TESTSRC = $(shell find test -name "*.js" -type f | sort)
 
+export AWS_ACCESS_KEY_ID=fake
+export AWS_SECRET_ACCESS_KEY=fake
+
 default: test
 
 lint: $(SRC) $(TESTSRC)
