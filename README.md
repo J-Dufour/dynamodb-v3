@@ -1,5 +1,5 @@
 
-`dynamodb-v3` is a fork of (dynamodb)[https://github.com/baseprime/dynamodb], a [DynamoDB][5] data mapper for [node.js][1].
+`dynamodb-v3` is a fork of [dynamodb](https://github.com/baseprime/dynamodb), a [DynamoDB][5] data mapper for [node.js][1].
 
 ## Features
 * Simplified data modeling and mapping to DynamoDB types
