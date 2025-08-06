@@ -33,7 +33,11 @@ exports.realDynamoDB = function () {
 };
 
 exports.mockDocClient = function () {
-  var client = DynamoDBDocument.from(exports.mockDynamoDB());
+  var client = DynamoDBDocument.from(exports.mockDynamoDB(), {
+    marshallOptions: {
+      removeUndefinedValues: true
+    }
+  });
 
   var operations= [
     'batchGet',
